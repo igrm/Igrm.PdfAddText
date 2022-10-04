@@ -1,0 +1,21 @@
+{
+    "env": {
+      "myDefaultIncludePath": ["${workspaceFolder}"]
+    },
+    "configurations": [
+      {
+        "name": "Debian",
+        "intelliSenseMode": "clang-x64",
+        "includePath": ["${myDefaultIncludePath}", "/usr/include/qpdf"],
+        "forcedInclude": [],
+        "compilerPath": "/usr/bin/clang",
+        "cStandard": "c17",
+        "browse": {
+          "path": ["${workspaceFolder}"],
+          "limitSymbolsToIncludedHeaders": true,
+          "databaseFilename": ""
+        }
+      }
+    ],
+    "version": 4
+  }
