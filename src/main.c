@@ -10,14 +10,16 @@ int main(int argc, char** argv)
     if (argc != 4)
     {
         printf("Usage: %s document page text\n", argv[0]);
+        exit(0);
     }
 
     
-    if (qpdf_read(qpdf, argv[1], NULL) & QPDF_ERRORS == 0)
+    if ((qpdf_read(qpdf, argv[1], NULL) & QPDF_ERRORS) == 0)
     {
-        printf("%s opened.");
+        printf("%s opened.\n", argv[1]);
         int total_pages = qpdf_get_num_pages(qpdf);
-        printf("%d pages in total, ", total_pages);
+        printf("%d pages in total\n ", total_pages);
+        
     }
     else
     {
