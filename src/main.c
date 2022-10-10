@@ -83,16 +83,20 @@ int main(int argc, char** argv)
                   printf("%lu\n", len);
                   printf("%s\n", bufp);
 
-                  char* newbuf = malloc(len+sizeof(char)*2+sizeof(char)*strlen(argv[3]));
-                  strcpy(newbuf, "(");
+                  char* newbuf = malloc(len+sizeof(char)*5+sizeof(char)*strlen(argv[3]));
+                  strcpy(newbuf, bufp);
+                  strcat(newbuf, "(");
                   strcat(newbuf, argv[3]);
-                  strcat(newbuf, ")");
-                  strcat(newbuf, bufp);
+                  strcat(newbuf, ")Tj\n");
+                 
 
                   qpdf_oh_replace_stream_data(qpdf, multiple_object_handles.oh[i], newbuf, strlen(newbuf), qpdf_oh_get_key(qpdf, page_object_handle, "/Filter"), qpdf_oh_get_key(qpdf, page_object_handle, "/DecodeParms"));
                   
                     if ((qpdf_init_write(qpdf, "result.pdf") & QPDF_ERRORS) == 0)
                     {
+                        qpdf_set_static_ID(qpdf, QPDF_TRUE); /* for testing only */
+                        qpdf_set_linearization(qpdf, QPDF_TRUE);
+                        qpdf_set_stream_data_mode(qpdf, qpdf_s_uncompress);
                         qpdf_write(qpdf);
                     }
                     else 
