@@ -3,11 +3,40 @@
 #include <stdlib.h>
 #include <string.h>
 
+struct pair
+{
+    int length;
+    qpdf_oh* oh;
+};
+
+typedef struct pair flatter_result;
+
+flatter_result flattern(const char* type, qpdf_data qpdf, qpdf_oh oh)
+{
+    flatter_result result = {0, NULL};
+
+    if (strcmp(type, "array") == 0)
+    {
+        int count = qpdf_oh_get_array_n_items(qpdf, oh);
+        qpdf_oh* temp = malloc(count*sizeof(qpdf_oh));
+        for (int i =0; i<count; i++)
+        {
+            temp[i] = qpdf_oh_get_array_item(qpdf, oh, i);
+        }
+        result = (flatter_result){.length = count, .oh = temp};
+    }
+    else if (strcmp(type, "stream") == 0)
+    {
+        qpdf_oh* temp = malloc(sizeof(qpdf_oh));
+        temp[0] = oh;
+        result = (flatter_result){.length = 1, .oh = temp};
+    }
+
+    return result;
+}
+
 int main(int argc, char** argv) 
 {
-    unsigned char* bufp = NULL;
-    size_t len = 0;
-
     qpdf_data qpdf = qpdf_init();
 
 
@@ -36,26 +65,59 @@ int main(int argc, char** argv)
         {
             if (strcmp(key, "/Contents") == 0) 
             { 
-               QPDF_BOOL filterable;
                qpdf_oh contents_object_handle = qpdf_oh_get_key(qpdf, page_object_handle, key);
                printf("Contents object handle: %d\n", contents_object_handle);
-               printf("%s\n", qpdf_oh_get_type_name(qpdf, contents_object_handle));
+               const char* type = qpdf_oh_get_type_name(qpdf, contents_object_handle);
+               printf("%s\n", type);
 
-               qpdf_oh_get_stream_data(qpdf, contents_object_handle, qpdf_dl_all,  &filterable, &bufp, &len);
-               printf("%lu\n", len);
-               printf("%s", bufp);
+               flatter_result multiple_object_handles = flattern(type, qpdf, contents_object_handle);
+               printf("Length found:%d\n",multiple_object_handles.length);
+               for (int i = 0; i < multiple_object_handles.length; i++)
+               {
+                  char* bufp = NULL;
+                  size_t len = 0;
+                  QPDF_BOOL filterable;
+
+                  printf("Processing handle %d\n", multiple_object_handles.oh[i]);
+                  qpdf_oh_get_stream_data(qpdf, multiple_object_handles.oh[i], qpdf_dl_all,  &filterable, &bufp, &len);
+                  printf("%lu\n", len);
+                  printf("%s\n", bufp);
+
+                  char* newbuf = malloc(len+sizeof(char)*2+sizeof(char)*strlen(argv[3]));
+                  strcpy(newbuf, "(");
+                  strcat(newbuf, argv[3]);
+                  strcat(newbuf, ")");
+                  strcat(newbuf, bufp);
+
+                  qpdf_oh_replace_stream_data(qpdf, multiple_object_handles.oh[i], newbuf, strlen(newbuf), qpdf_oh_get_key(qpdf, page_object_handle, "/Filter"), qpdf_oh_get_key(qpdf, page_object_handle, "/DecodeParms"));
+                  
+                    if ((qpdf_init_write(qpdf, "result.pdf") & QPDF_ERRORS) == 0)
+                    {
+                        qpdf_write(qpdf);
+                    }
+                    else 
+                    {
+                        printf("Write failed with the following:\n");
+                        printf("%s\n",qpdf_get_error_full_text(qpdf, qpdf_get_error(qpdf)));
+                    }
+
+                  free(bufp);
+                  free(newbuf);
+
+                  break;
+               }
+               free(multiple_object_handles.oh);
             }
             key = qpdf_oh_dict_next_key(qpdf);
         }
     }
     else
     {
-        printf("Error occured while opening %s\n", argv[1]);
-        printf( "%s\n",qpdf_get_error_full_text(qpdf, qpdf_get_error(qpdf)));
+        printf("Error occured while saving document %s\n", argv[1]);
+        fprintf(stderr, "%s\n",qpdf_get_error_full_text(qpdf, qpdf_get_error(qpdf)));
         exit(-1);
     }
 
     qpdf_cleanup(&qpdf);
-    free(bufp);
     return 0;
 }

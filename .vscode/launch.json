@@ -6,7 +6,7 @@
             "request": "launch",
             "name": "Debug",
             "program": "${workspaceFolder}/output",
-            "args": [],
+            "args": ["test.pdf", "1", "hi"],
             "cwd": "${workspaceFolder}"
         }
     ]

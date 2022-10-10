@@ -1,7 +1,9 @@
 {
     "files.associations": {
         "magickwand.h": "c",
-        "random": "c"
+        "random": "c",
+        "algorithm": "c",
+        "string_view": "c"
     },
     "C_Cpp.errorSquiggles":"Enabled"
 }
